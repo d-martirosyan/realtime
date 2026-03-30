@@ -6,6 +6,7 @@ import SignIn from "./pages/SignIn";
 import Chat from "./pages/Chat";
 import Settings from "./pages/Settings";
 import Loading from "./components/Loading";
+import { ToastProvider } from "./context/ToastContext";
 
 function App() {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
@@ -40,15 +41,17 @@ function App() {
   }
 
   return (
-    <Router>
-      <Routes>
-        <Route path="/" element={isAuthenticated ? <Navigate to="/chat" /> : <Home />} />
-        <Route path="/signup" element={isAuthenticated ? <Navigate to="/chat" /> : <SignUp />} />
-        <Route path="/signin" element={isAuthenticated ? <Navigate to="/chat" /> : <SignIn />} />
-        <Route path="/chat" element={isAuthenticated ? <Chat /> : <Navigate to="/signin" />} />
-        <Route path="/settings" element={isAuthenticated ? <Settings /> : <Navigate to="/signin" />} />
-      </Routes>
-    </Router>
+    <ToastProvider>
+      <Router>
+        <Routes>
+          <Route path="/" element={isAuthenticated ? <Navigate to="/chat" /> : <Home />} />
+          <Route path="/signup" element={isAuthenticated ? <Navigate to="/chat" /> : <SignUp />} />
+          <Route path="/signin" element={isAuthenticated ? <Navigate to="/chat" /> : <SignIn />} />
+          <Route path="/chat" element={isAuthenticated ? <Chat /> : <Navigate to="/signin" />} />
+          <Route path="/settings" element={isAuthenticated ? <Settings /> : <Navigate to="/signin" />} />
+        </Routes>
+      </Router>
+    </ToastProvider>
   );
 }
 

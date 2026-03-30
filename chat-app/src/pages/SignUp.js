@@ -1,7 +1,9 @@
 import React from "react";
 import AuthForm from "../components/AuthForm";
+import { useToast } from "../context/ToastContext";
 
 const SignUp = () => {
+  const toast = useToast();
   const handleSignUp = async (e) => {
     e.preventDefault();
     const username = e.target[0].value;
@@ -19,10 +21,12 @@ const SignUp = () => {
       const data = await res.json();
 
       if (res.ok) {
-        alert("Account created successfully! Please sign in.");
-        window.location.href = "/signin";
+        toast.success("Account created successfully! Please sign in.");
+        setTimeout(() => {
+          window.location.href = "/signin";
+        }, 1500);
       } else {
-        alert(data.msg);
+        toast.error(data.msg);
       }
     } catch (err) {
       console.error(err);

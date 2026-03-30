@@ -1,7 +1,9 @@
 import React from "react";
 import AuthForm from "../components/AuthForm";
+import { useToast } from "../context/ToastContext";
 
 const SignIn = () => {
+  const toast = useToast();
   const handleSignIn = async (e) => {
     e.preventDefault();
     const email = e.target[0].value;
@@ -22,7 +24,7 @@ const SignIn = () => {
         window.location.replace("/chat");
       } else {
         const data = await res.json();
-        alert(data.msg);
+        toast.error(data.msg);
       }
     } catch (err) {
       console.error(err);

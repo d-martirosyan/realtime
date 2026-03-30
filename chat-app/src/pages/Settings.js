@@ -1,8 +1,10 @@
 import React, { useState, useEffect, useRef } from "react";
 import { useNavigate } from "react-router-dom";
+import { useToast } from "../context/ToastContext";
 
 const Settings = () => {
   const navigate = useNavigate();
+  const toast = useToast();
   const [user, setUser] = useState({ username: "", email: "", avatar: "" });
   const [password, setPassword] = useState("");
   const [isDarkMode, setIsDarkMode] = useState(false);
@@ -80,11 +82,11 @@ const Settings = () => {
       });
 
       if (res.ok) {
-        alert("Profile updated successfully!");
+        toast.success("Profile updated successfully!");
         setPassword("");
       } else {
         const data = await res.json();
-        alert(data.msg || "Update failed");
+        toast.error(data.msg || "Update failed");
       }
     } catch (err) {
       console.error("Profile update error", err);
