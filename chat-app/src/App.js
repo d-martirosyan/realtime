@@ -4,6 +4,7 @@ import Home from "./pages/Home";
 import SignUp from "./pages/SignUp";
 import SignIn from "./pages/SignIn";
 import Chat from "./pages/Chat";
+import Settings from "./pages/Settings";
 import Loading from "./components/Loading";
 
 function App() {
@@ -11,6 +12,14 @@ function App() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
+    // Initialize theme
+    const savedTheme = localStorage.getItem("theme");
+    if (savedTheme === "dark" || (!savedTheme && window.matchMedia("(prefers-color-scheme: dark)").matches)) {
+      document.documentElement.classList.add("dark");
+    } else {
+      document.documentElement.classList.remove("dark");
+    }
+
     const checkAuth = async () => {
       try {
         const res = await fetch("http://localhost:5000/api/auth/me", {
@@ -37,6 +46,7 @@ function App() {
         <Route path="/signup" element={isAuthenticated ? <Navigate to="/chat" /> : <SignUp />} />
         <Route path="/signin" element={isAuthenticated ? <Navigate to="/chat" /> : <SignIn />} />
         <Route path="/chat" element={isAuthenticated ? <Chat /> : <Navigate to="/signin" />} />
+        <Route path="/settings" element={isAuthenticated ? <Settings /> : <Navigate to="/signin" />} />
       </Routes>
     </Router>
   );

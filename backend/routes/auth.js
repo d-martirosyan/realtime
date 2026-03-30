@@ -46,7 +46,7 @@ router.post("/signin", async (req, res) => {
       maxAge: 3600000
     });
 
-    res.json({ user: { id: user._id, username: user.username, email: user.email } });
+    res.json({ user: { id: user._id, username: user.username, email: user.email, avatar: user.avatar } });
   } catch (err) {
     res.status(500).json({ msg: "Server error" });
   }

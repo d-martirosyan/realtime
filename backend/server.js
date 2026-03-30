@@ -12,6 +12,7 @@ const app = express();
 app.use(cors({ origin: "http://localhost:3000", credentials: true })); // allow frontend
 app.use(express.json());
 app.use(cookieParser());
+app.use("/uploads", express.static(require("path").join(__dirname, "uploads"))); // ✅ Serve static files
 
 app.use("/api/auth", authRoutes);
 app.use("/api/users", userRoutes);
@@ -40,9 +41,9 @@ io.on("connection", (socket) => {
   });
 
   // Handle sending a message
-  socket.on("sendMessage", async ({ conversationId, senderId, text }) => {
+  socket.on("sendMessage", async ({ conversationId, senderId, text, fileUrl, fileName, fileType }) => {
     try {
-      const message = new Message({ conversationId, sender: senderId, text });
+      const message = new Message({ conversationId, sender: senderId, text, fileUrl, fileName, fileType });
       await message.save();
       await message.populate("sender", "username");
 

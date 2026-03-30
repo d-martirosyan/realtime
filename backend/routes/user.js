@@ -3,6 +3,19 @@ const authMiddleware = require("../middleware/authMiddleware");
 const express = require("express");
 const Conversation = require("../models/Conversation");
 const Message = require("../models/Message");
+const multer = require("multer");
+const path = require("path");
+
+const storage = multer.diskStorage({
+  destination: (req, file, cb) => {
+    cb(null, "uploads/");
+  },
+  filename: (req, file, cb) => {
+    // Generate unique name
+    cb(null, Date.now() + "-" + file.originalname);
+  }
+});
+const upload = multer({ storage });
 
 const router = express.Router();
 
@@ -34,7 +47,7 @@ router.post("/conversations", authMiddleware, async (req, res) => {
     // Check if conversation already exists
     let conversation = await Conversation.findOne({
       participants: { $all: [req.user, recipientId] }
-    }).populate("participants", "username email");
+    }).populate("participants", "username email avatar");
 
     // If not, create new
     if (!conversation) {
@@ -42,7 +55,7 @@ router.post("/conversations", authMiddleware, async (req, res) => {
         participants: [req.user, recipientId]
       });
       await conversation.save();
-      await conversation.populate("participants", "username email");
+      await conversation.populate("participants", "username email avatar");
     }
 
     res.json(conversation);
@@ -54,22 +67,43 @@ router.post("/conversations", authMiddleware, async (req, res) => {
 // Send a message
 router.post("/messages", authMiddleware, async (req, res) => {
   try {
-    const { conversationId, text } = req.body;
+    const { conversationId, text, fileUrl, fileName, fileType } = req.body;
 
     const message = new Message({
       conversationId,
       sender: req.user,   // comes from authMiddleware
-      text
+      text,
+      fileUrl,
+      fileName,
+      fileType
     });
 
     await message.save();
 
     // ✅ Add this line before sending response
-    await message.populate("sender", "username");
+    await message.populate("sender", "username avatar");
 
     res.json(message);
   } catch (err) {
     res.status(500).json({ msg: "Server error" });
+  }
+});
+
+// ✅ Upload file endpoint
+router.post("/upload", authMiddleware, upload.single("file"), (req, res) => {
+  try {
+    if (!req.file) {
+      return res.status(400).json({ msg: "No file uploaded" });
+    }
+    const fileUrl = `/uploads/${req.file.filename}`;
+    res.json({ 
+      fileUrl, 
+      fileName: req.file.originalname, 
+      fileType: req.file.mimetype 
+    });
+  } catch (err) {
+    console.error("Upload error:", err);
+    res.status(500).json({ msg: "Server error during upload" });
   }
 });
 
@@ -79,7 +113,7 @@ router.post("/messages", authMiddleware, async (req, res) => {
 router.get("/messages/:conversationId", authMiddleware, async (req, res) => {
   try {
     const messages = await Message.find({ conversationId: req.params.conversationId })
-      .populate("sender", "username"); // ensures sender has { _id, username }
+      .populate("sender", "username avatar"); // ensures sender has { _id, username, avatar }
     res.json(messages);
   } catch (err) {
     res.status(500).json({ msg: "Server error" });
@@ -105,7 +139,7 @@ router.put("/messages/read/:conversationId", authMiddleware, async (req, res) =>
 router.get("/conversations", authMiddleware, async (req, res) => {
   try {
     const conversations = await Conversation.find({ participants: req.user })
-      .populate("participants", "username email")
+      .populate("participants", "username email avatar")
       .lean();
 
     // Add unread count for each conversation
@@ -125,5 +159,37 @@ router.get("/conversations", authMiddleware, async (req, res) => {
 });
 
 
+
+const bcrypt = require("bcryptjs");
+
+// ✅ Update profile endpoint
+router.put("/profile", authMiddleware, async (req, res) => {
+  try {
+    const { username, email, password, avatar } = req.body;
+    const userToUpdate = await User.findById(req.user);
+    
+    if (!userToUpdate) return res.status(404).json({ msg: "User not found" });
+
+    if (username) userToUpdate.username = username;
+    if (email) userToUpdate.email = email;
+    if (avatar !== undefined) userToUpdate.avatar = avatar;
+    if (password) {
+      const salt = await bcrypt.genSalt(10);
+      userToUpdate.password = await bcrypt.hash(password, salt);
+    }
+
+    await userToUpdate.save();
+
+    res.json({
+      _id: userToUpdate._id,
+      username: userToUpdate.username,
+      email: userToUpdate.email,
+      avatar: userToUpdate.avatar
+    });
+  } catch (err) {
+    console.error("Profile update error:", err);
+    res.status(500).json({ msg: "Server error during profile update" });
+  }
+});
 
 module.exports = router;
